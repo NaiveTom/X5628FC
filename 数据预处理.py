@@ -225,6 +225,7 @@ fancy_print('label.shape', label.shape)
 
 model = model_def()
 
+
 '''
 model.compile(loss = 'binary_crossentropy',
                   optimizer = optimizers.Adam(lr = 0.00001),
