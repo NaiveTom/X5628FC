@@ -39,7 +39,7 @@ gc.enable()
 
 
 # 采样点数量（一次全用会增加计算机负担）
-smaple = -1
+smaple = 100
 
 
 
@@ -176,6 +176,11 @@ from keras.models import Model
 
 
 
+# 这一行新加的，用于导入绘图包
+# from keras.utils import plot_model
+
+
+
 def model_def():
 
     sizex = 4 # 输入大小尺寸，四个碱基
@@ -202,12 +207,14 @@ def model_def():
     model_1.add(Dropout(dropout_rate))
     # 3st Fully connected Dense
     model_1.add(Dense(128)); model_1.add(Activation('relu'))
+    '''
     model_1.add(Dropout(dropout_rate))
     # 4st Fully connected Dense
     model_1.add(Dense(16)); model_1.add(Activation('relu'))
     model_1.add(Dropout(dropout_rate))
     # 5nd Fully connected Dense
     model_1.add(Dense(1)); model_1.add(Activation('relu'))
+    '''
 
 
 
@@ -231,6 +238,7 @@ def model_def():
     model_2.add(Dropout(dropout_rate))
     # 3st Fully connected Dense
     model_2.add(Dense(128)); model_2.add(Activation('relu'))
+    '''
     model_2.add(Dropout(dropout_rate))
     # 4st Fully connected Dense
     model_2.add(Dense(16)); model_2.add(Activation('relu'))
@@ -238,6 +246,7 @@ def model_def():
     # 5nd Fully connected Dense
     model_2.add(Dense(1));
     model_2.add(Activation('relu'))
+    '''
 
 
 
@@ -245,18 +254,22 @@ def model_def():
     model = Sequential()
     model_concat = concatenate([model_1.output, model_2.output], axis=-1)
     fancy_print('model_concat.shape', model_concat.shape)
-    # 不需要这一层了
-    '''
-    model_concat = Dense(512, activation='relu')(model_concat)
+    # dense层
     model_concat = Dense(64, activation='relu')(model_concat)
-    model_concat = Dense(2, activation='relu')(model_concat)
+    model_concat = Dense(8, activation='relu')(model_concat)
+    model_concat = Dense(1, activation='relu')(model_concat)
     fancy_print('model_concat.shape', model_concat.shape)
-    '''
+    
     model = Model(inputs = [model_1.input, model_2.input], outputs = model_concat)
 
     fancy_print('model_1.summary()', model_1.summary(), '=')
     fancy_print('model_2.summary()', model_2.summary(), '=')
     fancy_print('model.summary()', model.summary(), '=')
+
+    # 这一行新加的，用于绘图
+    # plot_model(model_1, to_file='model_1.png', show_shapes=True)
+    # plot_model(model_1, to_file='model_1.png', show_shapes=True)
+    # plot_model(model, to_file='model.png', show_shapes=True)
 
     return model
 
@@ -359,6 +372,10 @@ label_2 = np.append(anchor2_pos_result, anchor2_neg2_result)
 fancy_print('label_2.shape', label_2.shape)
 
 # 合并label1和2
+# 不需要了
+# label_1和label_2是一样的，用任何一个就成了
+label = label_1
+'''
 label = []
 for i in range(len(label_1)):
     label.append([label_1[i], label_2[i]])
@@ -367,6 +384,7 @@ label_temp = np.array(label)
 del label
 label = label_temp
 del label_temp
+'''
 
 gc.collect() # 回收全部代垃圾，避免内存泄露
 
