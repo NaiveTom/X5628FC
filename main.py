@@ -30,58 +30,58 @@ def fancy_print(n=None, c=None, s='#'):
     print(s * 40)
     print() # 避免了混乱
 
+
+
+########################################
+#
+# 数据预处理部分
+#
+########################################
+
+# 引入data_processing.py
+import data_processing
+
+# 读取数据
+anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2 = data_processing.read_data()
+
+# 分割数据集为训练集和测试集 0.9:0.1
+anchor1_pos_train, anchor1_pos_test, \
+anchor1_neg2_train, anchor1_neg2_test, \
+anchor2_pos_train,anchor2_pos_test, \
+anchor2_neg2_train, anchor2_neg2_test = \
+data_processing.split_dataset(anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2)
+
+# 获得标签结果
+label_train, label_test = \
+data_processing.get_merged_result(anchor1_pos_train, anchor1_pos_test, \
+                                  anchor1_neg2_train, anchor1_neg2_test)
+
+# one-hot enconding
+train_onehot_1, train_onehot_2, \
+test_onehot_1, test_onehot_2 = \
+data_processing.onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
+                                 anchor1_neg2_train, anchor1_neg2_test, \
+                                 anchor2_pos_train, anchor2_pos_test, \
+                                 anchor2_neg2_train, anchor2_neg2_test)
+
+# 为了CNN扩展一个维度
+train_onehot_1, train_onehot_2, \
+test_onehot_1, test_onehot_2 = \
+data_processing.expand_dim(train_onehot_1, train_onehot_2, \
+           test_onehot_1, test_onehot_2)
+
+
+
+# 用作训练的部分
+# test_onehot_1
+# test_onehot_2
+#
+# label_test
+
 # 使用现有模型，禁止训练
-USE_EXISTING_MODEL = 1
+USE_EXISTING_MODEL = 0
 
-if USE_EXISTING_MODEL==0:
-    
-    ########################################
-    #
-    # 数据预处理部分
-    #
-    ########################################
-
-    # 引入data_processing.py
-    import data_processing
-
-    # 读取数据
-    anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2 = data_processing.read_data()
-
-    # 分割数据集为训练集和测试集 0.9:0.1
-    anchor1_pos_train, anchor1_pos_test, \
-    anchor1_neg2_train, anchor1_neg2_test, \
-    anchor2_pos_train,anchor2_pos_test, \
-    anchor2_neg2_train, anchor2_neg2_test = \
-    data_processing.split_dataset(anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2)
-
-    # 获得标签结果
-    label_train, label_test = \
-    data_processing.get_merged_result(anchor1_pos_train, anchor1_pos_test, \
-                                      anchor1_neg2_train, anchor1_neg2_test)
-
-    # one-hot enconding
-    train_onehot_1, train_onehot_2, \
-    test_onehot_1, test_onehot_2 = \
-    data_processing.onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
-                                     anchor1_neg2_train, anchor1_neg2_test, \
-                                     anchor2_pos_train, anchor2_pos_test, \
-                                     anchor2_neg2_train, anchor2_neg2_test)
-
-    # 为了CNN扩展一个维度
-    train_onehot_1, train_onehot_2, \
-    test_onehot_1, test_onehot_2 = \
-    data_processing.expand_dim(train_onehot_1, train_onehot_2, \
-               test_onehot_1, test_onehot_2)
-
-
-
-    # 用作训练的部分
-    # test_onehot_1
-    # test_onehot_2
-    #
-    # label_test
-
-
+if USE_EXISTING_MODEL == 0:
 
     ########################################
     #
@@ -115,7 +115,7 @@ if USE_EXISTING_MODEL==0:
 
 
 
-    clf.fit([train_onehot_1, train_onehot_2], label_train, epochs = 50, batch_size = 20, # 50 20
+    clf.fit([train_onehot_1, train_onehot_2], label_train, epochs = 100, batch_size = 20, # 50 20
                   validation_split = 0.1, callbacks = [modelCheckpoint])
     gc.collect() # 回收全部代垃圾，避免内存泄露
 
