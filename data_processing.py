@@ -32,7 +32,7 @@ gc.enable()
 ########################################
 
 # 采样点数量（一次全用会增加计算机负担）
-smaple = 3000
+smaple = 5000
 
 # 读取所有基因序列
 def read_data():
@@ -214,7 +214,7 @@ def get_merged_result(anchor1_pos_train, anchor1_pos_test, \
 ########################################
 
 # 第一个参数是需要编码的数据，第二个参数是OneHotEncoder
-def onehot_func(data, ATGC):
+def onehot_func(name, data, ATGC):
     
     data_onehot = []
 
@@ -233,7 +233,7 @@ def onehot_func(data, ATGC):
     # 查看大小
     # fancy_print('data_onehot[0]', data_onehot[0], '+')
     if debug_mode:
-        fancy_print('data_onehot.shape', data_onehot.shape, '+')
+        fancy_print(name + '.shape', data_onehot.shape, '+')
     gc.collect() # 回收全部代垃圾，避免内存泄露
 
     return data_onehot
@@ -257,17 +257,17 @@ def onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
 
 
 
-    anchor1_pos_train_onehot = onehot_func(anchor1_pos_train, ATGC)
-    anchor1_pos_test_onehot = onehot_func(anchor1_pos_test, ATGC)
+    anchor1_pos_train_onehot = onehot_func('anchor1_pos_train_onehot', anchor1_pos_train, ATGC)
+    anchor1_pos_test_onehot = onehot_func('anchor1_pos_test_onehot', anchor1_pos_test, ATGC)
     
-    anchor1_neg2_train_onehot = onehot_func(anchor1_neg2_train, ATGC)
-    anchor1_neg2_test_onehot = onehot_func(anchor1_neg2_test, ATGC)
+    anchor1_neg2_train_onehot = onehot_func('anchor1_neg2_train_onehot', anchor1_neg2_train, ATGC)
+    anchor1_neg2_test_onehot = onehot_func('anchor1_neg2_test_onehot', anchor1_neg2_test, ATGC)
     
-    anchor2_pos_train_onehot = onehot_func(anchor2_pos_train, ATGC)
-    anchor2_pos_test_onehot = onehot_func(anchor2_pos_test, ATGC)
+    anchor2_pos_train_onehot = onehot_func('anchor2_pos_train_onehot', anchor2_pos_train, ATGC)
+    anchor2_pos_test_onehot = onehot_func('anchor2_pos_test_onehot', anchor2_pos_test, ATGC)
     
-    anchor2_neg2_train_onehot = onehot_func(anchor2_neg2_train, ATGC)
-    anchor2_neg2_test_onehot = onehot_func(anchor2_neg2_test, ATGC)
+    anchor2_neg2_train_onehot = onehot_func('anchor2_neg2_train_onehot', anchor2_neg2_train, ATGC)
+    anchor2_neg2_test_onehot = onehot_func('anchor2_neg2_test_onehot', anchor2_neg2_test, ATGC)
 
     # 合并在一起
     train_onehot_1 = np.vstack((anchor1_pos_train_onehot, anchor1_neg2_train_onehot))
