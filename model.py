@@ -23,6 +23,7 @@ debug_mode = 1
 ########################################
 #
 # 模型结构
+# 模型太复杂了，第一占显存，第二，训练的时候梯度离散
 #
 ########################################
 
@@ -41,19 +42,20 @@ def model_def():
     model_1 = Activation('relu')(model_1)
     model_1 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_1)
     # 2nd Conv2D layer
-    model_1 = Convolution2D(filters=32, kernel_size=[40, 4], padding='same')(model_1)
+    model_1 = Convolution2D(filters=8, kernel_size=[40, 4], padding='same')(model_1)
     model_1 = Activation('relu')(model_1)
     model_1 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_1)
 
     # 1st Fully connected Dense
     model_1 = Flatten()(model_1)
-    model_1 = Dense(2048)(model_1); model_1 = Activation('relu')(model_1)
-    model_1 = Dropout(dropout_rate)(model_1)
-    # 2st Fully connected Dense
     model_1 = Dense(512)(model_1); model_1 = Activation('relu')(model_1)
     model_1 = Dropout(dropout_rate)(model_1)
+    # 2st Fully connected Dense
+    model_1 = Dense(64)(model_1); model_1 = Activation('relu')(model_1)
+    model_1 = Dropout(dropout_rate)(model_1)
     # 3st Fully connected Dense
-    model_1 = Dense(128)(model_1); model_1 = Activation('relu')(model_1)
+    # 使用softmax把输出值限制在01之间，是不行的，会梯度离散
+    # model_1 = Dense(128)(model_1); model_1 = Activation('relu')(model_1)
 
 
 
@@ -67,19 +69,20 @@ def model_def():
     model_2 = Activation('relu')(model_2)
     model_2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_2)
     # 2nd Conv2D layer
-    model_2 = Convolution2D(filters=32, kernel_size=[40, 4], padding='same')(model_2)
+    model_2 = Convolution2D(filters=8, kernel_size=[40, 4], padding='same')(model_2)
     model_2 = Activation('relu')(model_2)
     model_2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_2)
 
     # 1st Fully connected Dense
     model_2 = Flatten()(model_2)
-    model_2 = Dense(2048)(model_2); model_2 = Activation('relu')(model_2)
-    model_2 = Dropout(dropout_rate)(model_2)
-    # 2st Fully connected Dense
     model_2 = Dense(512)(model_2); model_2 = Activation('relu')(model_2)
     model_2 = Dropout(dropout_rate)(model_2)
+    # 2st Fully connected Dense
+    model_2 = Dense(64)(model_2); model_2 = Activation('relu')(model_2)
+    model_2 = Dropout(dropout_rate)(model_2)
     # 3st Fully connected Dense
-    model_2 = Dense(128)(model_2); model_2 = Activation('relu')(model_2)
+    # 使用softmax把输出值限制在01之间，是不行的，会梯度离散
+    # model_2 = Dense(128)(model_2); model_2 = Activation('relu')(model_2)
 
 
 
@@ -90,12 +93,12 @@ def model_def():
     if debug_mode:
         fancy_print('model_concat.shape', model_concat.shape)
     # dense层
-    model_concat = Dense(64, activation='relu')(model_concat)
+    model_concat = Dense(32, activation='relu')(model_concat)
     model_concat = Dropout(dropout_rate)(model_concat) # 避免过拟合
     model_concat = Dense(8, activation='relu')(model_concat)
     model_concat = Dropout(dropout_rate)(model_concat) # 避免过拟合
-    # 使用softmax把输出值限制在01之间，但是效果比sigmoid好
-    model_concat = Dense(1, activation='softmax')(model_concat)
+    # 使用softmax把输出值限制在01之间，是不行的，会梯度离散
+    model_concat = Dense(1, activation='relu')(model_concat)
     if debug_mode:
         fancy_print('model_concat.shape', model_concat.shape)
     
