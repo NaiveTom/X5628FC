@@ -23,7 +23,8 @@ debug_mode = 1
 ########################################
 #
 # 模型结构
-# 模型太复杂了，第一占显存，第二，训练的时候梯度离散
+# 模型太复杂了
+# 第一占显存，第二训练的时候梯度离散
 #
 ########################################
 
@@ -38,11 +39,12 @@ def model_def():
     # 输入层
     input_1 = Input(shape = (sizex, sizey, 1))
     # 1st Conv2D layer
-    model_1 = Convolution2D(filters=32, kernel_size=[40, 4], padding='same')(input_1)
+    # height and width
+    model_1 = Convolution2D(filters=32, kernel_size=[4, 40], padding='same')(input_1)
     model_1 = Activation('relu')(model_1)
     model_1 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_1)
     # 2nd Conv2D layer
-    model_1 = Convolution2D(filters=8, kernel_size=[40, 4], padding='same')(model_1)
+    model_1 = Convolution2D(filters=16, kernel_size=[4, 40], padding='same')(model_1)
     model_1 = Activation('relu')(model_1)
     model_1 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_1)
 
@@ -65,11 +67,12 @@ def model_def():
     # 输入层
     input_2 = Input(shape = (sizex, sizey, 1))
     # 1st Conv2D layer
-    model_2 = Convolution2D(filters=32, kernel_size=[40, 4], padding='same')(input_2)
+    # height and width
+    model_2 = Convolution2D(filters=32, kernel_size=[4, 40], padding='same')(input_2)
     model_2 = Activation('relu')(model_2)
     model_2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_2)
     # 2nd Conv2D layer
-    model_2 = Convolution2D(filters=8, kernel_size=[40, 4], padding='same')(model_2)
+    model_2 = Convolution2D(filters=16, kernel_size=[4, 40], padding='same')(model_2)
     model_2 = Activation('relu')(model_2)
     model_2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(model_2)
 
@@ -98,7 +101,8 @@ def model_def():
     model_concat = Dense(8, activation='relu')(model_concat)
     model_concat = Dropout(dropout_rate)(model_concat) # 避免过拟合
     # 使用softmax把输出值限制在01之间，是不行的，会梯度离散
-    model_concat = Dense(1, activation='relu')(model_concat)
+    # 还是用onehot吧
+    model_concat = Dense(2, activation='relu')(model_concat)
     if debug_mode:
         fancy_print('model_concat.shape', model_concat.shape)
     
@@ -109,7 +113,7 @@ def model_def():
 
     model.compile(loss = 'binary_crossentropy',
                   optimizer = Adam(lr = 1e-4),
-                  metrics = ['acc'])
+                  metrics = ['accuracy'])
     
     import gc
     gc.collect() # 回收全部代垃圾，避免内存泄露
