@@ -41,53 +41,24 @@ def fancy_print(n=None, c=None, s='#'):
 # 引入data_processing.py
 import data_processing
 
-# 读取数据
-anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2 = data_processing.read_data()
-
-# 分割数据集为训练集和测试集 0.9:0.1
-anchor1_pos_train, anchor1_pos_test, \
-anchor1_neg2_train, anchor1_neg2_test, \
-anchor2_pos_train,anchor2_pos_test, \
-anchor2_neg2_train, anchor2_neg2_test = \
-data_processing.split_dataset(anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2)
-
-# 获得标签结果
-label_train, label_test = \
-data_processing.get_merged_result(anchor1_pos_train, anchor1_pos_test, \
-                                  anchor1_neg2_train, anchor1_neg2_test)
-
-# one-hot enconding
 train_onehot_1, train_onehot_2, \
-test_onehot_1, test_onehot_2 = \
-data_processing.onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
-                                 anchor1_neg2_train, anchor1_neg2_test, \
-                                 anchor2_pos_train, anchor2_pos_test, \
-                                 anchor2_neg2_train, anchor2_neg2_test)
-
-# 为了CNN扩展一个维度
-train_onehot_1, train_onehot_2, \
-test_onehot_1, test_onehot_2 = \
-data_processing.expand_dim(train_onehot_1, train_onehot_2, \
-           test_onehot_1, test_onehot_2)
+val_onehot_1, val_onehot_2, \
+test_onehot_1, test_onehot_2, \
+label_train, label_val, label_test = data_processing.data_process()
 
 
 
-# 用作训练的部分
-# test_onehot_1
-# test_onehot_2
+########################################
 #
-# label_test
+# 深度学习部分
+#
+########################################
 
-# 使用现有模型，禁止训练
-USE_EXISTING_MODEL = 0
+# 值1：不训练，直接读取h5文件
+# 值0：训练，并生成h5文件
+USE_EXIST_MODEL = 0
 
-if USE_EXISTING_MODEL == 0:
-
-    ########################################
-    #
-    # 深度学习部分
-    #
-    ########################################
+if USE_EXIST_MODEL == 0:
 
     # 如果出现版本不兼容，那么就用这两句代码，否则会报警告
     # import tensorflow.compat.v1 as tf
@@ -110,18 +81,19 @@ if USE_EXISTING_MODEL == 0:
 
 
     filename = 'best_model.h5'
-    modelCheckpoint = ModelCheckpoint(filename, monitor = 'val_acc', save_best_only = True, mode = 'max')
+    modelCheckpoint = ModelCheckpoint(filename, monitor = 'val_accuracy', save_best_only = True, mode = 'max')
     gc.collect() # 回收全部代垃圾，避免内存泄露
 
 
 
-    clf.fit([train_onehot_1, train_onehot_2], label_train, epochs = 100, batch_size = 20, # 50 20
-                  validation_split = 0.1, callbacks = [modelCheckpoint])
+    clf.fit([train_onehot_1, train_onehot_2], label_train, validation_data=([val_onehot_1,val_onehot_2], label_val),
+            epochs = 100, batch_size = 40,
+            shuffle=True, callbacks = [modelCheckpoint])
     gc.collect() # 回收全部代垃圾，避免内存泄露
 
 else:
 
-    # 加载模型
+    # 跳过训练，直接加载模型
     from keras.models import load_model
     clf = load_model('best_model.h5')
 
@@ -132,57 +104,24 @@ else:
 
 
 
-# 用作训练的部分
-# test_onehot_1
-# test_onehot_2
-#
-# label_test
 
 
 
 # 新加入内容，用来评估模型质量
 # 计算auc和绘制roc_curve
 from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
-from sklearn.model_selection import cross_val_score
-from scipy import interp
-
-import os
 import matplotlib.pyplot as plt
 
+score = clf.evaluate([test_onehot_1, test_onehot_2], label_test)
+print('loss & acc:', score)
 
+# 打印所有内容
+np.set_printoptions(threshold=np.inf)
 
-# 利用model.predict获取测试集的预测值
-y_score = clf.predict([test_onehot_1, test_onehot_2])
-fancy_print('y_score', y_score, '.')
-
-# onehot
-y_temp_1 = []; y_temp_0 = []
-for each in y_score: # 这个each是一个
-    y_temp_1.append(float(each))
-    y_temp_0.append(1-float(each))
-y_prob = [y_temp_0, y_temp_1]; y_prob = np.transpose(y_prob)
+# 利用model.predict获取测试集的预测概率
+y_prob = clf.predict(x=[test_onehot_1, test_onehot_2])
 fancy_print('y_prob', y_prob, '.')
 fancy_print('y_prob.shape', y_prob.shape, '-')
-
-
-
-# 利用model.predict_proba获取测试集的预测概率(0-1之间)
-y_class = []
-for i in y_score:
-    if i >= 0.5:
-        y_class.append(1)
-    else:
-        y_class.append(0)
-
-# onehot
-y_temp_1 = []; y_temp_0 = []
-for each in y_class:
-    if each == 1: y_temp_1.append(1); y_temp_0.append(0)
-    else: y_temp_1.append(0); y_temp_0.append(1)
-y_class = [y_temp_0, y_temp_1]; y_class = np.transpose(y_class)
-fancy_print('y_class', y_class, '.')
-fancy_print('y_class.shape', y_class.shape, '-')
 
 
 
@@ -191,29 +130,20 @@ fpr = dict()
 tpr = dict()
 roc_auc = dict()
 
-# 二进制化输出
-# 转成独热码
-y_test = label_test.tolist()
-y_temp_1 = []; y_temp_0 = []
-for each in y_test:
-    if each == 1: y_temp_1.append(1); y_temp_0.append(0)
-    else: y_temp_1.append(0); y_temp_0.append(1)
-y_test = [y_temp_0, y_temp_1]; y_test = np.transpose(y_test)
-fancy_print('y_test', y_test, '.')
-fancy_print('y_test.shape', y_test.shape, '-')
 
 
-
-n_classes = y_test.shape[1] # n_classes = 2
+# 二分类问题
+n_classes = label_test.shape[1] # n_classes = 2
 fancy_print('n_classes', n_classes) # n_classes = 2
 
+# 使用实际类别和预测概率绘制ROC曲线
 for i in range(n_classes):
-    fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_prob[:, i])
+    fpr[i], tpr[i], _ = roc_curve(label_test[:, i], y_prob[:, i])
     roc_auc[i] = auc(fpr[i], tpr[i])
 
 fancy_print('fpr', fpr)
 fancy_print('tpr', tpr)
-fancy_print('CNN_roc_auc', roc_auc)
+fancy_print('cnn_roc_auc', roc_auc)
 
 
 
@@ -224,9 +154,8 @@ plt.plot(fpr[0], tpr[0], color='darkorange',
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Receiver operating characteristic(ROC)')
+plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic (ROC)')
 plt.legend(loc="lower right")
 
 plt.show()
