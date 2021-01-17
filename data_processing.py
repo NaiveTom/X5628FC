@@ -7,9 +7,19 @@
 
 import numpy as np
 
+import gc # 垃圾回收机制
+gc.enable()
+
+
+
 # 1开启debug模式，打印所有检查节点
 # 0关闭debug模式，静默执行
 debug_mode = 1
+
+# 采样点数量（一次全用会增加计算机负担）
+smaple = 2000
+
+
 
 # 打印格式
 def fancy_print(n=None, c=None, s='#'):
@@ -19,10 +29,6 @@ def fancy_print(n=None, c=None, s='#'):
     print(s * 40)
     print() # 避免了混乱
     
-# 垃圾回收机制
-import gc
-gc.enable()
-
 
 
 ########################################
@@ -31,111 +37,25 @@ gc.enable()
 #
 ########################################
 
-# 采样点数量（一次全用会增加计算机负担）
-smaple = 5000
+def read_data(name, file_dir):
 
-# 读取所有基因序列
-def read_data():
+    # 读取数据
+    f = open(file_dir, 'r')
+    data = f.readlines()
 
-    print('-> reading anchor_data/seq.anchor1.pos.txt ...')
-    # 第一组基因序列，正面
-    f = open('anchor_data/seq.anchor1.pos.txt', 'r')
-    anchor1_pos = f.readlines()
+    data = data[:smaple] # 分割一个比较小的大小，用于测试
 
-    anchor1_pos_temp = anchor1_pos[:smaple] # 仅测试的时候使用这几句话，这里是深度复制，需要清理垃圾，自动无法清理
-    del anchor1_pos
-    anchor1_pos = anchor1_pos_temp
-    del anchor1_pos_temp
+    # 替换为可以split的格式，并且去掉换行符号
+    for num in range(len(data)):
+        data[num] = data[num].replace('A', 'A ').replace('T', 'T ').replace('G', 'G ') \
+                    .replace('C', 'C ').replace('N', 'N ').replace('\n', '')
 
-    # 替换为数字，并且去掉换行符号
-    for num in range(len(anchor1_pos)):
-        anchor1_pos[num] = anchor1_pos[num].replace('A', 'A ').replace('T', 'T ').replace('G', 'G ') \
-            .replace('C', 'C ').replace('N', 'N ').replace('\n', '')
+    f.close()
         
-    # fancy_print('anchor1_pos', anchor1_pos) # 应该全是数字
     if debug_mode:
-        fancy_print('anchor1_pos.shape', np.array(anchor1_pos).shape, '+')
+        fancy_print(name + '.shape', np.array(data).shape, '=')
 
-    f.close()
-    gc.collect() # 回收全部代垃圾，避免内存泄露
-
-
-
-    print('-> reading anchor_data/seq.anchor1.neg2.txt ...')
-    # 第一组基因序列，负面
-    f = open('anchor_data/seq.anchor1.neg2.txt', 'r')
-    anchor1_neg2 = f.readlines()
-
-    anchor1_neg2_temp = anchor1_neg2[:smaple] # 仅测试的时候使用这几句话，这里是深度复制，需要清理垃圾，自动无法清理
-    del anchor1_neg2
-    anchor1_neg2 = anchor1_neg2_temp
-    del anchor1_neg2_temp
-
-    # 替换为数字，并且去掉换行符号
-    for num in range(len(anchor1_neg2)):
-        anchor1_neg2[num] = anchor1_neg2[num].replace('A', 'A ').replace('T', 'T ').replace('G', 'G ') \
-            .replace('C', 'C ').replace('N', 'N ').replace('\n', '')
-
-    if debug_mode:
-        fancy_print('anchor1_neg2.shape', np.array(anchor1_neg2).shape, '-')
-    
-    f.close()
-    gc.collect() # 回收全部代垃圾，避免内存泄露
-
-
-
-    print('-> reading anchor_data/seq.anchor2.pos.txt ...')
-    # 第二组基因序列 正面
-    f = open('anchor_data/seq.anchor2.pos.txt', 'r')
-    anchor2_pos = f.readlines()
-
-    anchor2_pos_temp = anchor2_pos[:smaple] # 仅测试的时候使用这几句话，这里是深度复制，需要清理垃圾，自动无法清理
-    del anchor2_pos
-    anchor2_pos = anchor2_pos_temp
-    del anchor2_pos_temp
-
-    # 替换为数字，并且去掉换行符号
-    for num in range(len(anchor2_pos)):
-        anchor2_pos[num] = anchor2_pos[num].replace('A', 'A ').replace('T', 'T ').replace('G', 'G ') \
-            .replace('C', 'C ').replace('N', 'N ').replace('\n', '')
-
-    if debug_mode:
-        fancy_print('anchor2_pos.shape', np.array(anchor2_pos).shape, '+')
-
-    f.close()
-    gc.collect() # 回收全部代垃圾，避免内存泄露
-
-
-
-    print('-> reading anchor_data/seq.anchor2.neg2.txt ...')
-    # 第二组基因序列 负面
-    f = open('anchor_data/seq.anchor2.neg2.txt', 'r')
-    anchor2_neg2 = f.readlines()
-
-    anchor2_neg2_temp = anchor2_neg2[:smaple] # 仅测试的时候使用这几句话，这里是深度复制，需要清理垃圾，自动无法清理
-    del anchor2_neg2
-    anchor2_neg2 = anchor2_neg2_temp
-    del anchor2_neg2_temp
-
-    # 替换为数字，并且去掉换行符号
-    for num in range(len(anchor2_neg2)):
-        anchor2_neg2[num] = anchor2_neg2[num].replace('A', 'A ').replace('T', 'T ').replace('G', 'G ') \
-            .replace('C', 'C ').replace('N', 'N ').replace('\n', '')
-
-    if debug_mode:
-        fancy_print('anchor2_neg2.shape', np.array(anchor2_neg2).shape, '-')
-
-    f.close()
-    gc.collect() # 回收全部代垃圾，避免内存泄露
-
-    '''
-    # 验证用，打印前五项
-    for line in anchor1_pos[0:5]:
-        print(line)
-    '''
-
-    # 返回所有结果
-    return anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2
+    return data
 
 
 
@@ -145,65 +65,21 @@ def read_data():
 #
 ########################################
 
-def split_dataset(anchor1_pos, anchor1_neg2, anchor2_pos, anchor2_neg2):
+def data_split(data):
 
-    split_rate = 0.9
-
-    import math
-
-    anchor1_pos_train = anchor1_pos[:math.floor(len(anchor1_pos)*0.9)]
-    anchor1_pos_test = anchor1_pos[math.floor(len(anchor1_pos)*0.9):]
-
-    anchor1_neg2_train = anchor1_neg2[:math.floor(len(anchor1_neg2)*0.9)]
-    anchor1_neg2_test = anchor1_neg2[math.floor(len(anchor1_neg2)*0.9):]
-
-    anchor2_pos_train = anchor2_pos[:math.floor(len(anchor2_pos)*0.9)]
-    anchor2_pos_test = anchor2_pos[math.floor(len(anchor2_pos)*0.9):]
-
-    anchor2_neg2_train = anchor2_neg2[:math.floor(len(anchor2_neg2)*0.9)]
-    anchor2_neg2_test = anchor2_neg2[math.floor(len(anchor2_neg2)*0.9):]
-
-    return anchor1_pos_train, anchor1_pos_test, \
-           anchor1_neg2_train, anchor1_neg2_test, \
-           anchor2_pos_train,anchor2_pos_test, \
-           anchor2_neg2_train, anchor2_neg2_test
-
-
-
-########################################
-#
-# 合并结果
-#
-########################################
-
-def get_merged_result(anchor1_pos_train, anchor1_pos_test, \
-                      anchor1_neg2_train, anchor1_neg2_test):
-
-    # 训练数据
-    # 生成结果数组(全1)
-    train_pos_result = np.ones(len(anchor1_pos_train))
-    # 生成结果数组(全0)
-    train_neg2_result = np.zeros(len(anchor1_neg2_train))
-
-    # 测试数据
-    # 生成结果数组(全1)
-    test_pos_result = np.ones(len(anchor1_pos_test))
-    # 生成结果数组(全0)
-    test_neg2_result = np.zeros(len(anchor1_neg2_test))
+    val_split_rate = 0.1 # 0.1
+    test_split_rate = 0.1 # 0.1
+    train_split_rate = 1 - val_split_rate - test_split_rate # 0.8
     
-    # 合并预测结果
-    # 二分类问题不需要onehot编码
-    label_train = np.append(train_pos_result, train_neg2_result)
-    # label_train = to_categorical(label_train) # 转换成onehot编码
-    fancy_print('label_train.shape', label_train.shape, '*')
-
-    label_test = np.append(test_pos_result, test_neg2_result)
-    # label_test = to_categorical(label_test) # 转换成onehot编码
-    fancy_print('label_test.shape', label_test.shape, '*')
-
-    gc.collect() # 回收全部代垃圾，避免内存泄露
-
-    return label_train, label_test
+    import math
+    
+    length = math.floor(len(data)) # 获取长度
+    train = data[ : int(length * train_split_rate) ]
+    val = data[ int(length * train_split_rate) :
+                int(length * (train_split_rate + val_split_rate)) ]
+    test = data[ int(length * (train_split_rate + val_split_rate)) : ]
+    
+    return train, val, test
 
 
 
@@ -213,7 +89,7 @@ def get_merged_result(anchor1_pos_train, anchor1_pos_test, \
 #
 ########################################
 
-# 第一个参数是需要编码的数据，第二个参数是OneHotEncoder
+# 第二个参数是需要编码的数据，第三个参数是OneHotEncoder
 def onehot_func(name, data, ATGC):
     
     data_onehot = []
@@ -222,32 +98,85 @@ def onehot_func(name, data, ATGC):
         # 把一维数组变成二维数组
         i = list(map(list, i.split()))
         data_onehot.append(np.transpose(ATGC.transform(i).toarray()))
-    del data # 这里需要清理垃圾
 
-    # 深度复制
-    data_onehot_temp = np.array(data_onehot)
-    del data_onehot
-    data_onehot = data_onehot_temp
-    del data_onehot_temp
+    data_onehot = np.array(data_onehot)
     
-    # 查看大小
-    # fancy_print('data_onehot[0]', data_onehot[0], '+')
     if debug_mode:
         fancy_print(name + '.shape', data_onehot.shape, '+')
-    gc.collect() # 回收全部代垃圾，避免内存泄露
 
     return data_onehot
+
+
+
+
+
+# 读取程序
+def data_process():
+
+    ########################################
+    #
+    # 读取基因数据
+    #
+    ########################################
+
+    anchor1_pos = read_data('anchor1_pos', 'anchor_data/seq.anchor1.pos.txt')
+    anchor1_neg2 = read_data('anchor1_neg2', 'anchor_data/seq.anchor1.neg2.txt')
+    anchor2_pos = read_data('anchor2_pos', 'anchor_data/seq.anchor2.pos.txt')
+    anchor2_neg2 = read_data('anchor2_neg2', 'anchor_data/seq.anchor2.neg2.txt')
+
+    gc.collect() # 回收全部代垃圾，避免内存泄露
     
 
+    
+    ########################################
+    #
+    # split
+    #
+    ########################################
+    
+    anchor1_pos_train, anchor1_pos_val, anchor1_pos_test = data_split(anchor1_pos)
+    anchor1_neg2_train, anchor1_neg2_val, anchor1_neg2_test = data_split(anchor1_neg2)
 
-def onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
-                     anchor1_neg2_train, anchor1_neg2_test, \
-                     anchor2_pos_train, anchor2_pos_test, \
-                     anchor2_neg2_train, anchor2_neg2_test):
+    anchor2_pos_train, anchor2_pos_val, anchor2_pos_test = data_split(anchor2_pos)
+    anchor2_neg2_train, anchor2_neg2_val, anchor2_neg2_test = data_split(anchor2_neg2)
 
-    # 第一部分的正面数据
+    gc.collect() # 回收全部代垃圾，避免内存泄露
+
+
+
+    ########################################
+    #
+    # 生成结果
+    #
+    ########################################
+
+    # onehot
+    from keras.utils import to_categorical
+    
+    label_train = np.append(np.ones(len(anchor1_pos_train)), np.zeros(len(anchor1_neg2_train)))
+    label_train = to_categorical(label_train) # 转换成onehot编码
+    fancy_print('label_train', label_train, '*')
+
+    label_val = np.append(np.ones(len(anchor1_pos_val)), np.zeros(len(anchor1_neg2_val)))
+    label_val = to_categorical(label_val) # 转换成onehot编码
+    fancy_print('label_val', label_val, '*')
+
+    label_test = np.append(np.ones(len(anchor1_pos_test)), np.zeros(len(anchor1_neg2_test)))
+    label_test = to_categorical(label_test) # 转换成onehot编码
+    fancy_print('label_test', label_test, '*')
+
+    gc.collect() # 回收全部代垃圾，避免内存泄露
+
+
+
+    ########################################
+    #
+    # onehot enconding
+    #
+    ########################################
+
     # 转换成onehot编码
-    from keras.utils.np_utils import to_categorical
+    from keras.utils import to_categorical
     from sklearn import preprocessing
 
     # 默认的是handle_unknown='error'，即不认识的数据报错，改成ignore代表忽略，全部用0替代
@@ -257,69 +186,66 @@ def onehot_enconding(anchor1_pos_train, anchor1_pos_test, \
 
 
 
-    anchor1_pos_train_onehot = onehot_func('anchor1_pos_train_onehot', anchor1_pos_train, ATGC)
-    anchor1_pos_test_onehot = onehot_func('anchor1_pos_test_onehot', anchor1_pos_test, ATGC)
+    anchor1_pos_train_onehot = onehot_func('anchor1_pos_train_onehot', anchor1_pos_train, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor1_neg2_train_onehot = onehot_func('anchor1_neg2_train_onehot', anchor1_neg2_train, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_pos_train_onehot = onehot_func('anchor2_pos_train_onehot', anchor2_pos_train, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_neg2_train_onehot = onehot_func('anchor2_neg2_train_onehot', anchor2_neg2_train, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
     
-    anchor1_neg2_train_onehot = onehot_func('anchor1_neg2_train_onehot', anchor1_neg2_train, ATGC)
-    anchor1_neg2_test_onehot = onehot_func('anchor1_neg2_test_onehot', anchor1_neg2_test, ATGC)
-    
-    anchor2_pos_train_onehot = onehot_func('anchor2_pos_train_onehot', anchor2_pos_train, ATGC)
-    anchor2_pos_test_onehot = onehot_func('anchor2_pos_test_onehot', anchor2_pos_test, ATGC)
-    
-    anchor2_neg2_train_onehot = onehot_func('anchor2_neg2_train_onehot', anchor2_neg2_train, ATGC)
-    anchor2_neg2_test_onehot = onehot_func('anchor2_neg2_test_onehot', anchor2_neg2_test, ATGC)
-
     # 合并在一起
     train_onehot_1 = np.vstack((anchor1_pos_train_onehot, anchor1_neg2_train_onehot))
     train_onehot_2 = np.vstack((anchor2_pos_train_onehot, anchor2_neg2_train_onehot))
+    gc.collect() # 回收全部代垃圾，避免内存泄露
 
+
+
+    anchor1_pos_val_onehot = onehot_func('anchor1_pos_test_onehot', anchor1_pos_val, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor1_neg2_val_onehot = onehot_func('anchor1_neg2_test_onehot', anchor1_neg2_val, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_pos_val_onehot = onehot_func('anchor2_pos_test_onehot', anchor2_pos_val, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_neg2_val_onehot = onehot_func('anchor2_neg2_test_onehot', anchor2_neg2_val, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露    
+
+    # 合并在一起
+    test_onehot_1 = np.vstack((anchor1_pos_val_onehot, anchor1_neg2_val_onehot))
+    test_onehot_2 = np.vstack((anchor2_pos_val_onehot, anchor2_neg2_val_onehot))
+    gc.collect() # 回收全部代垃圾，避免内存泄露
+
+
+
+    anchor1_pos_test_onehot = onehot_func('anchor1_pos_test_onehot', anchor1_pos_test, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor1_neg2_test_onehot = onehot_func('anchor1_neg2_test_onehot', anchor1_neg2_test, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_pos_test_onehot = onehot_func('anchor2_pos_test_onehot', anchor2_pos_test, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露
+    anchor2_neg2_test_onehot = onehot_func('anchor2_neg2_test_onehot', anchor2_neg2_test, ATGC); gc.collect() # 回收全部代垃圾，避免内存泄露    
+
+    # 合并在一起
     test_onehot_1 = np.vstack((anchor1_pos_test_onehot, anchor1_neg2_test_onehot))
     test_onehot_2 = np.vstack((anchor2_pos_test_onehot, anchor2_neg2_test_onehot))
+    gc.collect() # 回收全部代垃圾，避免内存泄露
 
 
 
-    return train_onehot_1, train_onehot_2, \
-           test_onehot_1, test_onehot_2
+    ########################################
+    #
+    # 扩充维度
+    #
+    ########################################
 
-
-
-########################################
-#
-# 扩充维度
-#
-########################################
-
-def expand_dim(train_onehot_1, train_onehot_2, \
-               test_onehot_1, test_onehot_2):
-
-    # 为了CNN，扩充维度
-    if debug_mode:
-        fancy_print('train_onehot_1.shape', train_onehot_1.shape, '*')
     train_onehot_1 = train_onehot_1[:, :, :, np.newaxis]
-    fancy_print('train_onehot_1.shape', train_onehot_1.shape, '*')
-
-    if debug_mode:
-        fancy_print('train_onehot_2.shape', train_onehot_2.shape, '*')
     train_onehot_2 = train_onehot_2[:, :, :, np.newaxis]
-    fancy_print('train_onehot_2.shape', train_onehot_2.shape, '*')
-
-    if debug_mode:
-        fancy_print('test_onehot_1.shape', test_onehot_1.shape, '*')
+    val_onehot_1 = test_onehot_1[:, :, :, np.newaxis]
+    val_onehot_2 = test_onehot_2[:, :, :, np.newaxis]
     test_onehot_1 = test_onehot_1[:, :, :, np.newaxis]
-    fancy_print('test_onehot_1.shape', test_onehot_1.shape, '*')
-
-    if debug_mode:
-        fancy_print('test_onehot_2.shape', test_onehot_2.shape, '*')
     test_onehot_2 = test_onehot_2[:, :, :, np.newaxis]
-    fancy_print('test_onehot_2.shape', test_onehot_2.shape, '*')
 
     gc.collect() # 回收全部代垃圾，避免内存泄露
 
+
+
     return train_onehot_1, train_onehot_2, \
-           test_onehot_1, test_onehot_2
+           val_onehot_1, val_onehot_2, \
+           test_onehot_1, test_onehot_2, \
+           label_train, label_val, label_test
+           
+
     
-
-
 ########################################
 #
 # 检修区
