@@ -207,8 +207,8 @@ def data_process():
         # print('单块大小', anchor1_pos_train_onehot.shape)
 
         # 合并在一起
-        train_pos = np.dstack((anchor1_pos_train_onehot, anchor2_pos_train_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-        train_neg = np.dstack((anchor1_neg2_train_onehot, anchor2_neg2_train_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
+        train_pos = np.hstack((anchor1_pos_train_onehot, anchor2_pos_train_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
+        train_neg = np.hstack((anchor1_neg2_train_onehot, anchor2_neg2_train_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
 
 
         print('合块大小', train_pos.shape)
@@ -250,8 +250,8 @@ def data_process():
     # print('单块大小', anchor1_pos_val_onehot.shape)
 
     # 合并在一起
-    val_pos = np.dstack((anchor1_pos_val_onehot, anchor2_pos_val_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-    val_neg = np.dstack((anchor1_neg2_val_onehot, anchor2_neg2_val_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
+    val_pos = np.hstack((anchor1_pos_val_onehot, anchor2_pos_val_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
+    val_neg = np.hstack((anchor1_neg2_val_onehot, anchor2_neg2_val_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
 
     print('合块大小', val_pos.shape)
     print('正在生成PNG ...')
@@ -277,8 +277,8 @@ def data_process():
     # print('单块大小', anchor1_pos_test_onehot.shape)
 
     # 合并在一起
-    test_pos = np.dstack((anchor1_pos_test_onehot, anchor2_pos_test_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-    test_neg = np.dstack((anchor1_neg2_test_onehot, anchor2_neg2_test_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
+    test_pos = np.hstack((anchor1_pos_test_onehot, anchor2_pos_test_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
+    test_neg = np.hstack((anchor1_neg2_test_onehot, anchor2_neg2_test_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
 
     print('合块大小', test_pos.shape)
     print('正在生成PNG ...')
