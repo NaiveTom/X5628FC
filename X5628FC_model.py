@@ -8,17 +8,17 @@ from keras import Sequential
 
 ##############################
 #
-# 模型结构
+# Model structure
 #
 ##############################
 
 def model_def():
 
-    dropout_rate = 0.5 # 舍弃比率
+    dropout_rate = 0.5 # Discard ratio
   
     model = Sequential()
   
-    model.add(Conv2D(64, kernel_size = [24, 1], strides = [4, 1], padding = 'same', activation = 'relu', input_shape = ((10001, 8, 1))))
+    model.add(Conv2D(64, kernel_size = [24, 1], strides = [4, 1], padding = 'same', activation = 'relu', input_shape = ((20002, 5, 1))))
     model.add(Conv2D(64, kernel_size = [24, 1], strides = [4, 1], padding = 'same', activation = 'relu'))
     model.add(Conv2D(64, kernel_size = [24, 1], strides = [4, 1], padding = 'same', activation = 'relu'))
   
@@ -35,17 +35,17 @@ def model_def():
     model.add(BatchNormalization())
   
     model.add(Dense(2048, activation = 'relu'))
-    model.add(Dropout(dropout_rate)) # 1
-    
+    model.add(Dropout(dropout_rate)) # Dropout 1
+    '''
     model.add(Dense(512, activation = 'relu'))
-    model.add(Dropout(dropout_rate)) # 2
+    model.add(Dropout(dropout_rate)) # Dropout 2
     model.add(Dense(128, activation = 'relu'))
-    model.add(Dropout(dropout_rate)) # 3
+    model.add(Dropout(dropout_rate)) # Dropout 3
     model.add(Dense(32, activation = 'relu'))
-    model.add(Dropout(dropout_rate)) # 4
-    
-    model.add(Dense(8, activation = 'relu')) # 最后一层不加 Dropout
-    model.add(Dense(2, activation = 'softmax')) # 输出归一化 softmax
+    model.add(Dropout(dropout_rate)) # Dropout 4
+    '''
+    model.add(Dense(2048, activation = 'relu')) # No Dropout on the last layer
+    model.add(Dense(2, activation = 'softmax')) # Output normalization softmax
   
     return model
 
@@ -53,11 +53,11 @@ def model_def():
 
 ##############################
 #
-# 检修区
+# Inspection area
 #
 ##############################
 
 if __name__ == '__main__':
   
-    # 用来放测试代码
+    # Used to put test code here
     pass

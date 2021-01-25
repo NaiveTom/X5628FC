@@ -2,40 +2,40 @@
 
 import tensorflow as tf
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # 去除不必要的信息
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Remove unnecessary information
 
-# 垃圾回收机制
+# Garbage collection mechanism
 import gc
 gc.enable()
 
 import numpy as np
 
-# 打印格式
+# Print format
 def fancy_print(n = None, c = None, s = '#'):
     print(s * 40)
     print(n)
     print(c)
     print(s * 40)
-    print() # 避免了混乱
+    print() # Avoid confusion
 
-# 设置GPU使用方式为渐进式，避免显存占满
-# 获取GPU列表
+# Set the GPU usage mode to be progressive to avoid full memory at beginning
+# Get GPU list
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
-        # 设置GPU为增长式占用
+        # Set the GPU to increase occupancy mode
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-            print('设置GPU为增长式占用')
+            print('Set the GPU to increase occupancy mode')
     except RuntimeError as e:
-        # 打印异常
+        # Printing error(No GPU mode)
         fancy_print('RuntimeError', e)
 
 
 
 ##############################
 #
-# 测试集迭代器
+# Test set iterator
 #
 ##############################
 
@@ -43,84 +43,85 @@ from keras.preprocessing.image import ImageDataGenerator
 
 test_datagen = ImageDataGenerator(rescale = 1. / 255)
 
-test_generator = test_datagen.flow_from_directory(directory = './test/', target_size = (10001, 8), 
+test_generator = test_datagen.flow_from_directory(directory = './test/', target_size = (20002, 5),
                                                   color_mode = 'grayscale', 
-                                                  classes = ['pos', 'neg'], 
-                                                  class_mode = 'categorical', # "categorical"会返回2D的one-hot编码标签, "binary"返回1D的二值标签."sparse"返回1D的整数标签
+                                                  classes = ['pos', 'neg'],
+                                                  # "categorical" will return a 2D one-hot encoding label, "binary" returns a 1D binary label. "sparse" returns a 1D integer label
+                                                  class_mode = 'categorical',
                                                   batch_size = 1, 
-                                                  shuffle = False) # 不要乱
+                                                  shuffle = False) # Don't shuffle
 
 
 
 ##############################
 #
-# 加载已经训练好的模型
+# Load the pre-trained model
 #
 ##############################
 
-# 跳过训练，直接加载模型
+# Skip training and load the model directly
 from keras.models import load_model
 clf = load_model('best_model.h5')
 
-gc.collect() # 回收全部代垃圾，避免内存泄露
+gc.collect() # Recycle all generations of garbage to avoid memory leaks
 
 
 
 ##############################
 #
-# 预测
+# prediction
 #
 ##############################
 
-# 新加入内容，用来评估模型质量
-# 计算auc和绘制roc_curve
+# New content added to evaluate model quality
+# Calculate auc and draw roc_curve
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
-# 先测算准确度
+# Measure accuracy first
 score = clf.evaluate_generator(generator = test_generator, steps = len(test_generator))
 fancy_print('loss & acc', score)
 
-# 打印所有内容
+# Print all content
 np.set_printoptions(threshold = np.inf)
 
-# 利用model.predict获取测试集的预测概率
+# Use model.predict to get the predicted probability of the test set
 y_prob = clf.predict_generator(generator = test_generator, steps = len(test_generator))
 fancy_print('y_prob', y_prob, '.')
 fancy_print('y_prob.shape', y_prob.shape, '-')
 
 
 
-# 获得label
+# Get label
 label_test_tag = test_generator.class_indices
 label_test_name = test_generator.filenames
 
 label_test = []
 for i in label_test_name:
-    label = i.split('\\')[0] # 把类别分出来
-    label_test.append(int(label_test_tag[label])) # 弄成数字呗
+    label = i.split('\\')[0] # Separate categories
+    label_test.append(int(label_test_tag[label])) # Make it into number
 
 from keras.utils.np_utils import to_categorical
 label_test = to_categorical(label_test)
 
 fancy_print('label_test', label_test, '.')
 fancy_print('label_test.shape', label_test.shape, '-')
-gc.collect() # 回收全部代垃圾，避免内存泄露
+gc.collect() # Recycle all generations of garbage to avoid memory leaks
 
 
 
-# 为每个类别计算ROC曲线和AUC
+# Calculate ROC curve and AUC for each category
 fpr = dict()
 tpr = dict()
 roc_auc = dict()
 
 
 
-# 二分类问题
+# Two classification problem
 n_classes = label_test.shape[1] # n_classes = 2
 fancy_print('n_classes', n_classes) # n_classes = 2
 
-# 使用实际类别和预测概率绘制ROC曲线
+# Draw ROC curve using actual category and predicted probability
 for i in range(n_classes):
     fpr[i], tpr[i], _ = roc_curve(label_test[:, i], y_prob[:, i])
     roc_auc[i] = auc(fpr[i], tpr[i])

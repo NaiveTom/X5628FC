@@ -1,51 +1,71 @@
 # -*- coding:utf-8 -*-
 
 '''
-本脚用于生成 png 文件
+This script is used to generate png files
+
+File system architecture:
+
+-- anchor_data
+ |-- seq.anchor1.neg2.txt
+ |-- seq.anchor1.pos.txt
+ |-- seq.anchor2.neg2.txt
+ |-- seq.anchor2.pos.txt
+
+-- merge_before_train
+ |-- train
+   |-- pos
+   |-- neg
+ |-- val
+   |-- pos
+   |-- neg
+ |-- test
+   |-- pos
+   |-- neg
+ |-- png_generator.py
+ |-- X5628FC_model.py
+ |-- X5628FC_predict.py
+ |-- X5628FC_train.py
 '''
 
 import numpy as np
 import os
 
-import gc # 垃圾回收机制
+import gc # Garbage collection mechanism
 gc.enable()
 
+# Number of sampling(use all will increase the burden of the computer)
+# Use all: smaple = None
+# Use 5000: smaple = 5000
+smaple = 5000
 
-
-# 采样点数量（一次全用会增加计算机负担）
-# 全部使用：None
-smaple = None # 测试成功，全部使用
-
-
-
-# 打印格式
+# fancy_print for checking
 def fancy_print(n=None, c=None, s='#'):
     print(s * 40)
     print(n)
     print(c)
     print(s * 40)
-    print() # 避免了混乱
+    print() # Avoid confusion
 
 
 
 ##############################
 #
-# 读取基因数据，并加上空格，方便之后处理
+# Read genetic data and add spaces for later processing
 #
 ##############################
 
-def read_data(name, file_dir): # name是用于打印的
+def read_data(name, file_dir): # name is for printing
 
-    # 读取数据
+    # Read data
     f = open(file_dir, 'r')
     data = f.readlines()
 
-    data = data[ : smaple ] # 分割一个比较小的大小，用于测试，如果是None， 那么就选取全部
+    data = data[ : smaple ] # Divide a smaller size for testing, if it is None, then select all
 
-    # 替换为可以split的格式，并且去掉换行符号
+    # Replace with a split format, and remove the line break
     for num in range( len(data) ):
         data[num] = data[num].replace('A', '0 ').replace('C', '1 ').replace('G', '2 ') \
-                    .replace('T', '3 ').replace('N', 'N ').replace('\n', '') # N不编码
+                    .replace('T', '3 ').replace('N', '4 ').replace('\n', '')
 
     f.close()
         
@@ -57,15 +77,15 @@ def read_data(name, file_dir): # name是用于打印的
 
 ##############################
 #
-# 分割数据集变成测试集、验证集、训练集
+# Split data set into test set, validation set, training set
 #
 ##############################
 
 def data_split(name, data):
 
-    val_split_rate = 0.1 # 0.1
-    test_split_rate = 0.1 # 0.1
-    train_split_rate = 1 - val_split_rate - test_split_rate # 0.8
+    val_split_rate = 0.2 # 0.2
+    test_split_rate = 0.2 # 0.2
+    train_split_rate = 1 - val_split_rate - test_split_rate # 0.6
 
     print('-' * 40); print(name); print()
 
@@ -77,7 +97,7 @@ def data_split(name, data):
     
     import math
     
-    length = math.floor(len(data)) # 获取长度
+    length = math.floor(len(data)) # Get the length
     train = data[ : int(length * train_split_rate) ]
     val = data[ int(length * train_split_rate) :
                 int(length * (train_split_rate + val_split_rate)) ]
@@ -99,13 +119,13 @@ def data_split(name, data):
 #
 ##############################
 
-# 第二个参数是需要编码的数据，第三个参数是OneHotEncoder
+# The first parameter is the data to be encoded, and the second parameter is OneHotEncoder
 def onehot_func(data, ATGC):
     
     data_onehot = []
 
     for i in data:
-        # 把一维数组变成二维数组
+        # Turn a one-dimensional array into a two-dimensional array
         i = list(map(list, i.split()))
         data_onehot.append(np.transpose(ATGC.transform(i).toarray()))
 
@@ -119,27 +139,27 @@ def onehot_func(data, ATGC):
 
 ##############################
 #
-# 调用函数进行信息处理
+# Call function for information processing
 #
 ##############################
 
 def data_process():
 
     ####################
-    # 读取基因数据
+    # Read genetic data
     ####################
 
-    anchor1_pos = read_data('anchor1_pos', 'anchor_data/seq.anchor1.pos.txt')
-    anchor1_neg2 = read_data('anchor1_neg2', 'anchor_data/seq.anchor1.neg2.txt')
-    anchor2_pos = read_data('anchor2_pos', 'anchor_data/seq.anchor2.pos.txt')
-    anchor2_neg2 = read_data('anchor2_neg2', 'anchor_data/seq.anchor2.neg2.txt')
+    anchor1_pos = read_data('anchor1_pos', '../anchor_data/seq.anchor1.pos.txt')
+    anchor1_neg2 = read_data('anchor1_neg2', '../anchor_data/seq.anchor1.neg2.txt')
+    anchor2_pos = read_data('anchor2_pos', '../anchor_data/seq.anchor2.pos.txt')
+    anchor2_neg2 = read_data('anchor2_neg2', '../anchor_data/seq.anchor2.neg2.txt')
 
-    gc.collect()  # 回收全部代垃圾，避免内存泄露
+    gc.collect()  # Recycle all generations of garbage to avoid memory leaks
 
 
 
     ####################
-    # 调用函数进行分割处理
+    # Call function for split processing
     ####################
 
     anchor1_pos_train, anchor1_pos_val, anchor1_pos_test = data_split('anchor1_pos', anchor1_pos)
@@ -147,7 +167,7 @@ def data_process():
     anchor2_pos_train, anchor2_pos_val, anchor2_pos_test = data_split('anchor2_pos', anchor2_pos)
     anchor2_neg2_train, anchor2_neg2_val, anchor2_neg2_test = data_split('anchor2_neg2', anchor2_neg2)
 
-    gc.collect()  # 回收全部代垃圾，避免内存泄露
+    gc.collect()  # Recycle all generations of garbage to avoid memory leaks
 
 
 
@@ -155,138 +175,130 @@ def data_process():
 
     ##############################
     #
-    # 写入h5文件（废弃）写入图片
+    # Write picture
     #
     ##############################
 
-    # 写入图片
+    # Write picture module
     # pip install imageio
     import imageio
     from skimage import img_as_ubyte
 
-    # 转换成onehot编码
+    # Convert to onehot encoding
     from keras.utils import to_categorical
     from sklearn import preprocessing
 
-    # 默认的是handle_unknown='error'，即不认识的数据报错，改成ignore代表忽略，全部用0替代
+    # The default is handle_unknown = 'error', that is, the unknown data is reported as an error. Change it to ignore, and replace all with 0
     ATGC = preprocessing.OneHotEncoder( handle_unknown = 'ignore' )
-    # 打印一下输出数组，可以不打印
+    # Print the output array, you can skip this step
     fancy_print('one-hot enconding',
-                '[ [A], [C], [G], [T] ]\n' + str(ATGC.fit_transform([['0'], ['1'], ['2'], ['3']]).toarray()))
+                '[ [A], [C], [G], [T], [N] ]\n' + str(ATGC.fit_transform([['0'], ['1'], ['2'], ['3'], ['4']]).toarray()))
 
     ####################
-    # 训练集存成图片
+    # Save the training set as a picture
     ####################
 
-    LEN_PER_LOAD = 1000 # 越小越快，1000正好
+    LEN_PER_LOAD = 1000 # The smaller the faster, 1000 is just right
 
     pic_num = 0
 
-    for i in range( int(len(anchor1_pos_train)/LEN_PER_LOAD)+1 ): # 这里分块处理，一次处理1000个，因为onehot是二阶复杂度，别弄太大
+    # Here it is processed in blocks, processing 1000 at a time, because onehot is a second-order complexity, don’t make it too big
+    for i in range( int(len(anchor1_pos_train)/LEN_PER_LOAD)+1 ):
 
-        # 显示一下百分比
-        print('\n正在分块存储训练集和标签，块编号 =', str(i), '/', int( len(anchor1_pos_train)/LEN_PER_LOAD) )
+        # Show the percentage
+        print('\nThe training set and labels are being stored in blocks, block number =', str(i), '/', int( len(anchor1_pos_train)/LEN_PER_LOAD) )
 
-        if (i+1)*LEN_PER_LOAD > len(anchor1_pos_train): # 这段代码处理小尾巴问题
+        if (i+1)*LEN_PER_LOAD > len(anchor1_pos_train): # This code deals with the little tail(ending block) problem
 
-            try: # 有可能小尾巴是0
+            try: # Maybe the little tail(ending block) is 0
                 anchor1_pos_train_onehot = onehot_func(anchor1_pos_train[ i*LEN_PER_LOAD : ], ATGC)
                 anchor1_neg2_train_onehot = onehot_func(anchor1_neg2_train[ i*LEN_PER_LOAD : ], ATGC)
                 anchor2_pos_train_onehot = onehot_func(anchor2_pos_train[ i*LEN_PER_LOAD : ], ATGC)
                 anchor2_neg2_train_onehot = onehot_func(anchor2_neg2_train[ i*LEN_PER_LOAD : ], ATGC)
             except:
-                print('最后一个块大小为0，已跳过本块（避免报错）')
+                print('The size of the last block is 0, this block has been skipped (to avoid errors)')
 
-        else: # 这段代码处理正常分块问题
+        else: # This code handles the normal blocking split
             
             anchor1_pos_train_onehot = onehot_func(anchor1_pos_train[ i*LEN_PER_LOAD : (i+1)*LEN_PER_LOAD ], ATGC)
             anchor1_neg2_train_onehot = onehot_func(anchor1_neg2_train[ i*LEN_PER_LOAD : (i+1)*LEN_PER_LOAD ], ATGC)
             anchor2_pos_train_onehot = onehot_func(anchor2_pos_train[ i*LEN_PER_LOAD : (i+1)*LEN_PER_LOAD ], ATGC)
             anchor2_neg2_train_onehot = onehot_func(anchor2_neg2_train[ i*LEN_PER_LOAD : (i+1)*LEN_PER_LOAD ], ATGC)
 
-        # print('单块大小', anchor1_pos_train_onehot.shape)
+        # combined together
+        train_pos = np.dstack((anchor1_pos_train_onehot, anchor2_pos_train_onehot)) # Positive & Positive Merge horizontally dstack & Merge vertically hstack
+        train_neg = np.dstack((anchor1_neg2_train_onehot, anchor2_neg2_train_onehot)) # Negative & Negative Merge horizontally dstack & Merge vertically hstack
 
-        # 合并在一起
-        train_pos = np.hstack((anchor1_pos_train_onehot, anchor2_pos_train_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-        train_neg = np.hstack((anchor1_neg2_train_onehot, anchor2_neg2_train_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
-
-
-        print('合块大小', train_pos.shape)
-        print('正在生成PNG ...')
-
+        print('Merged block size', train_pos.shape)
+        print('PNG is being generated...')
 
 
         if train_pos.shape[0]==0 or train_pos.shape[1]==0 or train_pos.shape[2]==0:
-            print('无效空块，已跳过！')
-            continue # 空块，跳过循环
-
+            print('Invalid empty block, skipped!')
+            continue # Empty block, skip the loop
 
 
         # pip install tqdm
-        # 进度条
+        # progress bar
         import tqdm
 
-        # 写入一张张图片
+        # Write pictures one by one
         for j in tqdm.trange( len(train_pos), ascii=True ):
-            imageio.imwrite('train/pos/'+str(pic_num)+'.png', img_as_ubyte(np.transpose(train_pos[j]))) # 必须转置，因为PNG是反的
-            imageio.imwrite('train/neg/'+str(pic_num)+'.png', img_as_ubyte(np.transpose(train_neg[j]))) # 必须转置，因为PNG是反的
+            imageio.imwrite('train/pos/'+str(pic_num)+'.png', img_as_ubyte(np.transpose(train_pos[j]))) # Must be transposed, because PNG is inverted
+            imageio.imwrite('train/neg/'+str(pic_num)+'.png', img_as_ubyte(np.transpose(train_neg[j]))) # Must be transposed, because PNG is inverted
             pic_num += 1
         
-        gc.collect()  # 回收全部代垃圾，避免内存泄露
+        gc.collect()  # Recycle all generations of garbage to avoid memory leaks
 
 
 
     ####################
-    # 验证集存成图片
+    # Save the verification set as picture
     ####################
 
-    print('\n\n正在把验证集和标签写入 png 中 ...')
+    print('\n\nWriting validation set and tags to png ...')
 
     anchor1_pos_val_onehot = onehot_func(anchor1_pos_val, ATGC)
     anchor1_neg2_val_onehot = onehot_func(anchor1_neg2_val, ATGC)
     anchor2_pos_val_onehot = onehot_func(anchor2_pos_val, ATGC)
     anchor2_neg2_val_onehot = onehot_func(anchor2_neg2_val, ATGC)
 
-    # print('单块大小', anchor1_pos_val_onehot.shape)
+    # combined together
+    val_pos = np.dstack((anchor1_pos_val_onehot, anchor2_pos_val_onehot)) # Positive & Positive Merge horizontally dstack & Merge vertically hstack
+    val_neg = np.dstack((anchor1_neg2_val_onehot, anchor2_neg2_val_onehot)) # Negative & Negative Merge horizontally dstack & Merge vertically hstack
 
-    # 合并在一起
-    val_pos = np.hstack((anchor1_pos_val_onehot, anchor2_pos_val_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-    val_neg = np.hstack((anchor1_neg2_val_onehot, anchor2_neg2_val_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
+    print('Merged block size', val_pos.shape)
+    print('PNG is being generated...')
 
-    print('合块大小', val_pos.shape)
-    print('正在生成PNG ...')
-
-    # 写入一张张图片
+    # Write pictures one by one
     for j in tqdm.trange( len(val_pos), ascii=True ):
-        imageio.imwrite('val/pos/'+str(j)+'.png', img_as_ubyte(np.transpose(val_pos[j]))) # 必须转置，因为PNG是反的
-        imageio.imwrite('val/neg/'+str(j)+'.png', img_as_ubyte(np.transpose(val_neg[j]))) # 必须转置，因为PNG是反的
+        imageio.imwrite('val/pos/'+str(j)+'.png', img_as_ubyte(np.transpose(val_pos[j]))) # Must be transposed, because PNG is inverted
+        imageio.imwrite('val/neg/'+str(j)+'.png', img_as_ubyte(np.transpose(val_neg[j]))) # Must be transposed, because PNG is inverted
 
-    gc.collect()  # 回收全部代垃圾，避免内存泄露
+    gc.collect()  # Recycle all generations of garbage to avoid memory leaks
 
     ####################
-    # 测试集存成图片
+    # Save the test set as picture
     ####################
 
-    print('\n\n正在把测试集和标签写入 png 中 ...')
+    print('\n\nWriting test set and tags to png ...')
 
     anchor1_pos_test_onehot = onehot_func(anchor1_pos_test, ATGC)
     anchor1_neg2_test_onehot = onehot_func(anchor1_neg2_test, ATGC)
     anchor2_pos_test_onehot = onehot_func(anchor2_pos_test, ATGC)
     anchor2_neg2_test_onehot = onehot_func(anchor2_neg2_test, ATGC)
 
-    # print('单块大小', anchor1_pos_test_onehot.shape)
+    # combined together
+    test_pos = np.dstack((anchor1_pos_test_onehot, anchor2_pos_test_onehot)) # Positive & Positive Merge horizontally dstack & Merge vertically hstack
+    test_neg = np.dstack((anchor1_neg2_test_onehot, anchor2_neg2_test_onehot)) # Negative & Negative Merge horizontally dstack & Merge vertically hstack
 
-    # 合并在一起
-    test_pos = np.hstack((anchor1_pos_test_onehot, anchor2_pos_test_onehot)) # 积极&积极 横着合并 dstack 竖着合并 hstack
-    test_neg = np.hstack((anchor1_neg2_test_onehot, anchor2_neg2_test_onehot)) # 消极&消极 横着合并 dstack 竖着合并 hstack
+    print('Merged block size', test_pos.shape)
+    print('PNG is being generated...')
 
-    print('合块大小', test_pos.shape)
-    print('正在生成PNG ...')
-
-    # 写入一张张图片
+    # Write pictures one by one
     for j in tqdm.trange( len(test_pos), ascii=True ):
-        imageio.imwrite('test/pos/'+str(j)+'.png', img_as_ubyte(np.transpose(test_pos[j]))) # 必须转置，因为PNG是反的
-        imageio.imwrite('test/neg/'+str(j)+'.png', img_as_ubyte(np.transpose(test_neg[j]))) # 必须转置，因为PNG是反的
+        imageio.imwrite('test/pos/'+str(j)+'.png', img_as_ubyte(np.transpose(test_pos[j]))) # Must be transposed, because PNG is inverted
+        imageio.imwrite('test/neg/'+str(j)+'.png', img_as_ubyte(np.transpose(test_neg[j]))) # Must be transposed, because PNG is inverted
 
 
 
@@ -294,16 +306,17 @@ def data_process():
 
 ########################################
 #
-# 主函数
+# main function
 #
 ########################################
-
-# import h5py # 导入工具包 
 
 if __name__ == '__main__':
 
-    # 使用PNG好处很多：体积小，速度快，直观，可以直接用自带的API（效率高）
+    fancy_print('merge_before_train')
+
+    # There are many benefits of using PNG: small size, fast speed, intuitive,
+    # and you can directly use keras API (high efficiency)
     data_process()
 
-    print('\n已完成所有操作！')
-    input('\n请按任意键继续. . .') # 避免闪退
+    print('\nAll operations have been completed!')
+    input('\nPlease press any key to continue...') # Avoid crash

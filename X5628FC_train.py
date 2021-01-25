@@ -2,89 +2,92 @@
 
 import tensorflow as tf
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # 去除不必要的信息
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Remove unnecessary information
 
-# 垃圾回收机制
+# Garbage collection mechanism
 import gc
 gc.enable()
 
 import numpy as np
 
-# 打印格式
+# Print format
 def fancy_print(n = None, c = None, s = '#'):
     print(s * 40)
     print(n)
     print(c)
     print(s * 40)
-    print() # 避免了混乱
+    print() # Avoid confusion
 
-# 设置GPU使用方式为渐进式，避免显存占满
-# 获取GPU列表
+# Set the GPU usage mode to be progressive to avoid full memory
+# Get GPU list
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
-        # 设置GPU为增长式占用
+        # Set the GPU to increase occupancy mode
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-            print('设置GPU为增长式占用')
+            print('Set the GPU to increase occupancy mode')
     except RuntimeError as e:
-        # 打印异常
+        # print error(no GPU mode)
         fancy_print('RuntimeError', e)
 
 
 
 ##############################
 #
-# 构建迭代器
+# Build iterator
 #
 ##############################
 
 from keras.preprocessing.image import ImageDataGenerator
 
-# train_datagen = ImageDataGenerator(horizontal_flip = True, vertical_flip = True, rescale = 1. / 255) # 上下翻转 左右翻转
+# train_datagen = ImageDataGenerator(horizontal_flip = True, vertical_flip = True, rescale = 1. / 255) # Flip up and down, flip left and right
 train_datagen = ImageDataGenerator(rescale = 1. / 255)
 val_datagen = ImageDataGenerator(rescale = 1. / 255)
 
-BATCH_SIZE = 16 # 每次大小
+BATCH_SIZE = 32 # Size each time
 
-train_generator = train_datagen.flow_from_directory(directory = './train/', target_size = (10001, 8),
+train_generator = train_datagen.flow_from_directory(directory = './train/', target_size = (20002, 5),
                                                     color_mode = 'grayscale',
                                                     classes = ['pos', 'neg'],
-                                                    class_mode = 'categorical', # 'categorical'会返回2D的one-hot编码标签, 'binary'返回1D的二值标签, 'sparse'返回1D的整数标签
+                                                    #'categorical' will return 2D one-hot encoding labels,'binary' returns 1D binary labels, and'sparse' returns 1D integer labels
+                                                    class_mode = 'categorical',
                                                     batch_size = BATCH_SIZE,
-                                                    shuffle = True) # 打散
-
-val_generator = val_datagen.flow_from_directory(directory = './val/', target_size = (10001, 8),
+                                                    shuffle = True, # must shuffle
+                                                    seed = 42)
+val_generator = val_datagen.flow_from_directory(directory = './val/', target_size = (20002, 5),
                                                 color_mode = 'grayscale',
                                                 classes = ['pos', 'neg'],
-                                                class_mode = 'categorical', # 'categorical'会返回2D的one-hot编码标签, 'binary'返回1D的二值标签, 'sparse'返回1D的整数标签
+                                                #'categorical' will return 2D one-hot encoding labels,'binary' returns 1D binary labels, and'sparse' returns 1D integer labels
+                                                class_mode = 'categorical',
                                                 batch_size = BATCH_SIZE,
-                                                shuffle = False) # 不打散
+                                                shuffle = True, # must shuffle
+                                                seed = 42)
 
 
 
 ##############################
 #
-# 模型搭建
+# Model building
 #
 ##############################
 
-# 如果出现版本不兼容，那么就用这两句代码，否则会报警告
+# If the version is not compatible, then use these two lines of code, otherwise a warning will be reported and stop the porgram
 # import tensorflow.compat.v1 as tf
 # tf.disable_v2_behavior()
 
 from sklearn import metrics
 from keras.callbacks import ModelCheckpoint
 
-# 导入X5628FC_model.py
+# Import X5628FC_model.py
 import X5628FC_model
 
 clf = X5628FC_model.model_def()
 
-clf.summary() # 打印模型结构
+clf.summary() # Print model structure
 
 from keras.optimizers import Adam
-clf.compile(loss = 'categorical_crossentropy', # sparse_categorical_crossentropy binary_crossentropy
+clf.compile(loss = 'categorical_crossentropy',
             optimizer = Adam(lr = 0.0001, decay = 0.00001),
             metrics = ['accuracy'])
 
@@ -93,13 +96,13 @@ filename = 'best_model.h5'
 modelCheckpoint = ModelCheckpoint(filename, monitor = 'val_accuracy', save_best_only = True, mode = 'max')
 '''
 from keras.callbacks import EarlyStopping
-early_stopping = EarlyStopping(monitor = 'val_loss', patience = 10, restore_best_weights = True)
+early_stopping = EarlyStopping(monitor = 'val_accuracy', patience = 10, restore_best_weights = True)
 
-gc.collect() # 回收全部代垃圾，避免内存泄露
+gc.collect() # Recycle all generations of garbage to avoid memory leaks
 
 
 
-'''
+
 fancy_print('train_generator.next()[0]', train_generator.next()[0], '+')
 fancy_print('train_generator.next()[1]', train_generator.next()[1], '+')
 fancy_print('train_generator.next()[0].shape', train_generator.next()[0].shape, '+')
@@ -109,19 +112,22 @@ fancy_print('val_generator.next()[0]', val_generator.next()[0], '-')
 fancy_print('val_generator.next()[1]', val_generator.next()[1], '-')
 fancy_print('val_generator.next()[0].shape', val_generator.next()[0].shape, '-')
 fancy_print('val_generator.next()[1].shape', val_generator.next()[1].shape, '-')
-'''
+
 ##############################
 #
-# 模型训练
+# Model training
 #
 ##############################
 
-# 不需要再算多少个epoch了，自己会算
+# No need to count how many epochs, keras can count
 history = clf.fit_generator(generator = train_generator,
-                            epochs = 50,
+                            epochs = 100,
                             validation_data = val_generator,
 
-                            callbacks = [early_stopping],
-                            shuffle = True) # 再次 shuffle
+                            steps_per_epoch = int(6000 / BATCH_SIZE),
+                            validation_steps = int(2000 / BATCH_SIZE),
+                            initial_epoch = 0)
+
+                            # callbacks = [early_stopping])
 
 clf.save('best_model.h5')
