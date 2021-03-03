@@ -41,15 +41,14 @@ if gpus:
 
 from keras.preprocessing.image import ImageDataGenerator
 
-test_datagen = ImageDataGenerator(rescale = 1. / 255)
+datagen = ImageDataGenerator(rescale = 1./255)
 
-test_generator = test_datagen.flow_from_directory(directory = './test/', target_size = (20002, 5),
-                                                  color_mode = 'grayscale', 
-                                                  classes = ['pos', 'neg'],
-                                                  # "categorical" will return a 2D one-hot encoding label, "binary" returns a 1D binary label. "sparse" returns a 1D integer label
-                                                  class_mode = 'categorical',
-                                                  batch_size = 1, 
-                                                  shuffle = False) # Don't shuffle
+BATCH_SIZE = 32 # 一次大小
+
+test_generator = datagen.flow_from_directory(directory = './test/', target_size = (20002, 5),
+                                             color_mode = 'grayscale',
+                                             batch_size = BATCH_SIZE,
+                                             shuffle = False) # 不需要 shuffle
 
 
 
@@ -83,7 +82,7 @@ score = clf.evaluate_generator(generator = test_generator, steps = len(test_gene
 fancy_print('loss & acc', score)
 
 # Print all content
-np.set_printoptions(threshold = np.inf)
+# np.set_printoptions(threshold = np.inf)
 
 # Use model.predict to get the predicted probability of the test set
 y_prob = clf.predict_generator(generator = test_generator, steps = len(test_generator))
@@ -96,10 +95,12 @@ fancy_print('y_prob.shape', y_prob.shape, '-')
 label_test_tag = test_generator.class_indices
 label_test_name = test_generator.filenames
 
+# 没有反，这里是对的
 label_test = []
 for i in label_test_name:
     label = i.split('\\')[0] # Separate categories
-    label_test.append(int(label_test_tag[label])) # Make it into number
+    # 这里是对的
+    label_test.append( int(label_test_tag[label]) ) # Make it into number
 
 from keras.utils.np_utils import to_categorical
 label_test = to_categorical(label_test)
